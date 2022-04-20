@@ -53,7 +53,7 @@ sectorNames <- c('Total',
 df_init <- data.frame(
   startDate = "01/01/2014 00:00",
   endDate   = "01/12/2014 00:00",
-  ghgName = "co2"
+  ghgName = "CO2"
 )
 
 # Format the dates as POSIXct
@@ -90,8 +90,9 @@ text-align: center
                  sidebarPanel(
                    fluidRow(column(6, h4('Select:')), column(6, actionButton("sendjobbutton", "Run Model", class="btn btn-success btn-lg"), align="right")),
                    fluidRow(
-                     column(4, selectInput('select_gas', h5("Gas"), choices = as.list(c("ch4", "co2", "n2o")))),
-                     column(4, selectInput('select_proj', h5("Projection"), choices = as.list(c("OSGB", "LonLat - command line only")))),
+                     column(4, selectInput('select_gas', h5("Gas"), choices = as.list(c("CH4", "CO2", "N2O", "C2H6", "VOC")))),
+                     column(4, selectInput('select_proj', h5("Projection"), choices = as.list(c("OSGB", "LonLat")))),
+                     #uiOutput('res_selector'),
                      column(4, selectInput('select_res', h5("Resolution"), choices = list('OSGB (km)' = as.list(c("1", "20", "100")),'LonLat (deg)' = as.list(c("0.1"))), selected = "100" ))
                      ), 
                    fluidRow(
@@ -154,7 +155,7 @@ text-align: center
       ),
       tabPanel("Help",
                verbatimTextOutput('title_text'),
-               #verbatimTextOutput('checks')
+               #verbatimTextOutput('checks'),
                plotOutput('checks'),
                verbatimTextOutput('title_text2'),
                ), 
@@ -193,6 +194,8 @@ server <- function(input, output) {
     seq(startDate(), endDate(), length = input$intslider)
   })
   
+  output$res_selector <- renderUI(selectInput('select_res', h5("Resolution"), choices = list('OSGB' = c("1 km", "20 km", "100 km"), 'LonLat' = "0.1 deg")[[input$select_proj]]))
+  
   #observeEvent(input$sendjobbutton, {
     output$time_points <- renderUI(selectInput('timp_sector', label = 'Select timepoint:', choices = strftime(datect(), format = "%d-%m-%Y %H:%M")))
   #})
@@ -207,6 +210,8 @@ server <- function(input, output) {
     # create a job dataframe
     tibble(datech = as.character(datect()),
                ghgName = input$select_gas,
+               #ghgName = tolower(input$select_gas),
+               #nice_ghgName = input$select_gas,
                proj = input$select_proj,
                res = input$select_res,
                unitType = input$select_unitType,
@@ -221,14 +226,22 @@ server <- function(input, output) {
   })
   
   output$job_table <- renderDataTable({
-    datatable(job_df()[,c('datech', 'ghgName', 'proj', 'res', 'unitType', 'unitSIprefix', 'log_year', 'log_yday', 'log_wday', 'log_hour', 'log_includeBio')], colnames = c('Timestamp', 'GHG', 'Proj', 'Res', 'Unit', 'Unit Prefix', 'Year', 'yDay', 'wDay', 'Hour', 'Bio'), options = list(autoWidth = TRUE), rownames= FALSE)
-  })
+    datatable(job_df()[,c('datech', 'ghgName', 'proj', 'res', 'unitType', 'unitSIprefix', 'log_year', 'log_yday', 'log_wday', 'log_hour', 'log_includeBio')], colnames = c('Timestamp', 'GHG', 'Proj', 'Res', 'Unit', 'Unit Prefix', 'Year', 'yDay', 'wDay', 'Hour', 'Bio'), rownames= FALSE, extensions = 'Buttons', options = list(
+      #autoWidth = TRUE, 
+      dom = 'Bfrtip',
+      buttons = list('copy', 'print', list(
+        extend = 'collection', 
+        buttons = c('csv', 'excel', 'pdf'),
+        text = 'Download')
+      )
+    ))
+  }, serve = F)
   
 
   myFlux <- eventReactive(input$sendjobbutton, {
     #shinybusy::show_modal_spinner()
     #showModal(modalDialog('Model running'))
-    calcFlux(input$select_gas, job_df()$datect, proj = input$select_proj,
+    calcFlux(tolower(input$select_gas), job_df()$datect, proj = input$select_proj,
                        res = input$select_res, input$select_unitType, input$select_unitSIprefix,
                        includeBio = input$log_includeBio,
                        timeScales = c(input$log_year, input$log_yday, input$log_wday, input$log_hour),
