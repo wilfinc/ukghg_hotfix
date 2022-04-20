@@ -92,8 +92,8 @@ text-align: center
                    fluidRow(
                      column(4, selectInput('select_gas', h5("Gas"), choices = as.list(c("CH4", "CO2", "N2O", "C2H6", "VOC")))),
                      column(4, selectInput('select_proj', h5("Projection"), choices = as.list(c("OSGB", "LonLat")))),
-                     #uiOutput('res_selector'),
-                     column(4, selectInput('select_res', h5("Resolution"), choices = list('OSGB (km)' = as.list(c("1", "20", "100")),'LonLat (deg)' = as.list(c("0.1"))), selected = "100" ))
+                     column(4, uiOutput('res_selector')),
+                     #column(4, selectInput('select_res', h5("Resolution"), choices = list('OSGB (km)' = as.list(c("1", "20", "100")),'LonLat (deg)' = as.list(c("0.1"))), selected = "100" ))
                      ), 
                    fluidRow(
                      column(4, selectInput("select_unitType", label = h5("Units"), choices = as.list(c("mol", "g")))),
@@ -149,6 +149,7 @@ text-align: center
                  #selectInput('sel_sector', label = 'Select sector:', choices = c('Total', sectorNames)),
                  #selectInput('sel_sector', label = 'Select sector:', choices = sectorNames),
                  uiOutput('time_points'),
+                 column(12, actionButton("plotmapbutton", "Plot Data", class = "btn btn-success btn-lg"), align = 'center')
                  ),
                #selectInput('sel_sector', label = 'Select sector:', choices = sectorNames)
                #leafletOutput('map', height = '795px'),
@@ -184,6 +185,8 @@ text-align: center
 # Define server logic required for the app
 server <- function(input, output) {
  # Create a data frame with all the information about the job
+
+  output$res_selector <- renderUI(selectInput('select_res', h5("Resolution"), choices = list('OSGB' = c("1 km", "20 km", "100 km"), 'LonLat' = "0.1 deg")[[input$select_proj]], selected = '100 km'))
   
   startDate <- reactive(as.POSIXct(strptime(paste(sprintf("%02d", day(input$sdate)), "/", sprintf("%02d", month(input$sdate)), "/", year(input$sdate), " ", sprintf("%02d", input$shour), ":", sprintf("%02d", input$smin), sep = ""), "%d/%m/%Y %H:%M"), tz = "UTC"))
   endDate   <- reactive(as.POSIXct(strptime(paste(sprintf("%02d", day(input$edate)), "/", sprintf("%02d", month(input$edate)), "/", year(input$edate), " ", sprintf("%02d", input$ehour), ":", sprintf("%02d", input$emin), sep = ""), "%d/%m/%Y %H:%M"), tz = "UTC"))
@@ -193,8 +196,6 @@ server <- function(input, output) {
     # create a sequence of timestamps
     seq(startDate(), endDate(), length = input$intslider)
   })
-  
-  output$res_selector <- renderUI(selectInput('select_res', h5("Resolution"), choices = list('OSGB' = c("1 km", "20 km", "100 km"), 'LonLat' = "0.1 deg")[[input$select_proj]]))
   
   #observeEvent(input$sendjobbutton, {
     output$time_points <- renderUI(selectInput('timp_sector', label = 'Select timepoint:', choices = strftime(datect(), format = "%d-%m-%Y %H:%M")))
@@ -242,7 +243,7 @@ server <- function(input, output) {
     #shinybusy::show_modal_spinner()
     #showModal(modalDialog('Model running'))
     calcFlux(tolower(input$select_gas), job_df()$datect, proj = input$select_proj,
-                       res = input$select_res, input$select_unitType, input$select_unitSIprefix,
+                       res = gsub(' km| deg', '', input$select_res), input$select_unitType, input$select_unitSIprefix,
                        includeBio = input$log_includeBio,
                        timeScales = c(input$log_year, input$log_yday, input$log_wday, input$log_hour),
                        writeNetCDF = input$select_writeNetCDF)
