@@ -126,29 +126,8 @@
                    uiOutput('time_points'),
                    column(12, actionButton("plotmapbutton", "Plot Data", class = "btn btn-success btn-lg"), align = 'center'),
                    column(12, downloadButton("netcdf_dload", "Download Data", class = "btn btn-outline-dark btn-lg", icon = icon('download'), style = 'margin-top: 10px;'), align = 'center'),
-                   #column(12, actionButton("downloadpop", "Download Data", class = "btn btn-outline-dark btn-lg", icon = icon('download'), style = 'margin-top: 10px;'), align = 'center'),
-                   #uiOutput('downloadpop_ui1'),
-                   #uiOutput('downloadpop_ui2'),
-                   #renderUI('downloadpop_modal')
-                   #BsModal()
-                   #uiOutput("popup")
-                   ),
+                    ),
         ),
-        # conditionalPanel(
-        #   condition = ("downloadpop == 0"),
-        #   h3("Instructions for calculator"),
-        # ),
-        # conditionalPanel(
-        #   condition = "downloadpop != 0",
-        #   tabPanel(
-        #     "Summary",
-        #     h3("Outputs calculated based on user inputs"),
-        #   )
-        #   ),
-        # tabPanel("Download",
-        #          downloadButton("netcdf_total", "Download netCDF file for total emission"),
-        #          downloadButton("netcdf_bySector", "Download netCDF files by sector"),
-        # ),
         tabPanel("Documentation",
                  p("UK-GHG is a spatio-temporal model of greenhouse gas fluxes from the UK."),
                  uiOutput("git_link"),
@@ -169,15 +148,6 @@
   server <- function(input, output) {
    # Create a data frame with all the information about the job
   
-    
-    # output$popup <- renderUI({
-    #   bsModal("modalExample", trigger = 'downloadpop', size = "large",
-    #             fluidRow(renderText('Download total emissions:')),
-    #             column(6, downloadButton("netcdf_total", "NetCDF", class = "btn btn-outline-dark btn-lg", icon = icon('download')), align = 'center')
-    #           )
-    #   })
-    
-    
     output$res_selector <- renderUI(selectInput('select_res', h5("Resolution"), choices = list('OSGB' = c("1 km", "20 km", "100 km"), 'LonLat' = "0.1 deg")[[input$select_proj]], selected = '100 km'))
     
     startDate <- reactive(as.POSIXct(strptime(paste(sprintf("%02d", day(input$sdate)), "/", sprintf("%02d", month(input$sdate)), "/", year(input$sdate), " ", sprintf("%02d", input$shour), ":", sprintf("%02d", input$smin), sep = ""), "%d/%m/%Y %H:%M"), tz = "UTC"))
@@ -190,13 +160,6 @@
     
     output$time_points <- renderUI(selectInput('timp_sector', label = 'Select timepoint:', choices = strftime(datect(), format = "%d-%m-%Y %H:%M")))
 
-    # output$downloadpop_modal <- observeEvent(input$show, {
-    #   showModal(modalDialog(
-    #     title = "Important message",
-    #     "This is an important message!"
-    #   ))
-    # })
-    
     time_point_i <- reactive({which(input$timp_sector == strftime(datect(), format = "%d-%m-%Y %H:%M"))})
     
     job_df <- reactive({
@@ -260,8 +223,6 @@
         })
     })
     
-    #output$checking_time_i <- renderText(paste(time_point_i()))
-  
     observeEvent(input$plotmapbutton, {
                pal <- colorNumeric(palette = "viridis", domain = rev(vals()), na.color = "transparent", reverse = F)
 
@@ -272,24 +233,14 @@
                  addLegend_decreasing(pal = pal, values = vals(), decreasing = T, title = toupper(input$select_gas))
     })
 
-    # conditionalPanel(
-    #   condition = "input.MoreTabs == 'moretabs' && input.Tabs == 'tabs'",
-    #   tabBox(
-    #     title = "intro",
-    #     id= "ttabs", width = 8, height = "420px",
-    #     tabPanel("Files",value=1, dataTableOutput("Filesa")),
-    #     tabPanel("Files1",value=2, dataTableOutput("Files1a"))
-    #   )
-    # ),
-    
-    observeEvent(input$sendjobbutton == 0, {
-      output$waiting_text <- renderText('<b>Outputs will appear here after the model has been run.<b>')
-      }, once = T)
-    
-    observeEvent(input$sendjobbutton == 1, {
-      output$waiting_text <- NULL
-    }, ignoreInit = T)
-    
+    # observeEvent(input$sendjobbutton == 0, {
+    #   output$waiting_text <- renderText('<b>Outputs will appear here after the model has been run.<b>')
+    #   }, once = T)
+    # 
+    # observeEvent(input$sendjobbutton == 1, {
+    #   output$waiting_text <- NULL
+    # }, ignoreInit = T)
+    # 
     observe({
       if (input$TID == "View Output" | input$TID == "Download" )  {
         if (input$sendjobbutton == 0) {
@@ -312,39 +263,6 @@
       }
     )
    
-    # observeEvent(input$downloadpop, {
-    #   output$downloadpop_ui1 <- renderUI({
-    #     column(12, downloadButton("netcdf_total", "Total emissions", style = 'margin-top: 20px;'), align = 'center')
-    #     #column(12, downloadButton("netcdf_bySector", "Download emissions by sector", style = 'margin-top: 10px;'), align = 'center')
-    #   })
-    # })
-    # 
-    # observeEvent(input$downloadpop, {
-    #   output$downloadpop_ui2 <- renderUI({
-    #     #column(12, downloadButton("netcdf_total", "Total emissions", style = 'margin-top: 20px;'), align = 'center')
-    #     column(12, downloadButton("netcdf_bySector", "Emissions by sector", style = 'margin-top: 10px;'), align = 'center')
-    #   })
-    # })
-    
-    # # download netCDF file for total flux
-    # output$netcdf_total <- downloadHandler(
-    #   filename = function() {
-    #     paste('ukghg-total-', Sys.Date(), '.nc', sep='')
-    #   },
-    #   content = function(file) {
-    #     writeRaster(myFlux$s_ghgTotal, file)
-    #   }
-    # )
-    # # download netCDF files by sector
-    # output$netcdf_bySector <- downloadHandler(
-    #   filename = function() {
-    #     paste('ukghg-bysectorbytime-', Sys.Date(), '.nc', sep='')
-    #   },
-    #   content = function(file) {
-    #     writeRaster(myFlux$ls_ghgBySectorByTime[[1]], file)
-    #   }
-    # )
-    
   }
   
   
