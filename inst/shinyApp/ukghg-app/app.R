@@ -101,7 +101,7 @@
                      ),
                      
                      fluidRow(
-                       sliderInput("intslider", label = "Select the number of time steps between the start and end times:", min = 1, max = 366, value = 1, step = 1)
+                       sliderInput("intslider", label = "Select the number of time steps between the start and end times:", min = 1, max = 366, value = 12, step = 1)
                        ),
                      fluidRow(
                        column(width = 6, h6("Time scales of variation:"))
@@ -125,9 +125,10 @@
                    selectInput('sel_sector', label = 'Select sector:', choices = sectorNames),
                    uiOutput('time_points'),
                    column(12, actionButton("plotmapbutton", "Plot Data", class = "btn btn-success btn-lg"), align = 'center'),
-                   column(12, actionButton("downloadpop", "Download Data", class = "btn btn-outline-dark btn-lg", icon = icon('download'), style = 'margin-top: 10px;'), align = 'center'),
-                   uiOutput('downloadpop_ui1'),
-                   uiOutput('downloadpop_ui2'),
+                   column(12, downloadButton("netcdf_dload", "Download Data", class = "btn btn-outline-dark btn-lg", icon = icon('download'), style = 'margin-top: 10px;'), align = 'center'),
+                   #column(12, actionButton("downloadpop", "Download Data", class = "btn btn-outline-dark btn-lg", icon = icon('download'), style = 'margin-top: 10px;'), align = 'center'),
+                   #uiOutput('downloadpop_ui1'),
+                   #uiOutput('downloadpop_ui2'),
                    #renderUI('downloadpop_modal')
                    #BsModal()
                    #uiOutput("popup")
@@ -239,13 +240,17 @@
 
     target_stack <- reactive({
       if(input$sel_sector == 'Total'){
-        myFlux$s_ghgTotal[[time_point_i()]]
+        myFlux$s_ghgTotal
       } else{
-        myFlux$ls_ghgBySectorByTime[[which(input$sel_sector == sectorNames)-1]][[time_point_i()]]
+        myFlux$ls_ghgBySectorByTime[[which(input$sel_sector == sectorNames)-1]]
       }
     })
+    
+    target_stack_i <- reactive({
+      target_stack()[[time_point_i()]]
+      })
 
-    vals <- reactive({values(target_stack())})
+    vals <- reactive({values(target_stack_i())})
 
     observeEvent(input$sendjobbutton, {
       output$map <- renderLeaflet({
@@ -255,7 +260,7 @@
         })
     })
     
-    output$checking_time_i <- renderText(paste(time_point_i()))
+    #output$checking_time_i <- renderText(paste(time_point_i()))
   
     observeEvent(input$plotmapbutton, {
                pal <- colorNumeric(palette = "viridis", domain = rev(vals()), na.color = "transparent", reverse = F)
@@ -263,7 +268,7 @@
                leafletProxy("map") %>%
                  clearImages() %>%
                  clearControls() %>%
-                 addRasterImage(target_stack(), opacity = 0.5, colors = pal) %>%
+                 addRasterImage(target_stack_i(), opacity = 0.5, colors = pal) %>%
                  addLegend_decreasing(pal = pal, values = vals(), decreasing = T, title = toupper(input$select_gas))
     })
 
@@ -296,39 +301,49 @@
         }
       }
     })
+    
+    # download netCDF file of data - by sector
+    output$netcdf_dload <- downloadHandler(
+      filename = function() {
+        paste('ukghg-', Sys.Date(), '.nc', sep='')
+      },
+      content = function(file) {
+        writeRaster(target_stack(), file)
+      }
+    )
    
-    observeEvent(input$downloadpop, {
-      output$downloadpop_ui1 <- renderUI({
-        column(12, downloadButton("netcdf_total", "Total emissions", style = 'margin-top: 20px;'), align = 'center')
-        #column(12, downloadButton("netcdf_bySector", "Download emissions by sector", style = 'margin-top: 10px;'), align = 'center')
-      })
-    })
+    # observeEvent(input$downloadpop, {
+    #   output$downloadpop_ui1 <- renderUI({
+    #     column(12, downloadButton("netcdf_total", "Total emissions", style = 'margin-top: 20px;'), align = 'center')
+    #     #column(12, downloadButton("netcdf_bySector", "Download emissions by sector", style = 'margin-top: 10px;'), align = 'center')
+    #   })
+    # })
+    # 
+    # observeEvent(input$downloadpop, {
+    #   output$downloadpop_ui2 <- renderUI({
+    #     #column(12, downloadButton("netcdf_total", "Total emissions", style = 'margin-top: 20px;'), align = 'center')
+    #     column(12, downloadButton("netcdf_bySector", "Emissions by sector", style = 'margin-top: 10px;'), align = 'center')
+    #   })
+    # })
     
-    observeEvent(input$downloadpop, {
-      output$downloadpop_ui2 <- renderUI({
-        #column(12, downloadButton("netcdf_total", "Total emissions", style = 'margin-top: 20px;'), align = 'center')
-        column(12, downloadButton("netcdf_bySector", "Emissions by sector", style = 'margin-top: 10px;'), align = 'center')
-      })
-    })
-    
-    # download netCDF file for total flux
-    output$netcdf_total <- downloadHandler(
-      filename = function() {
-        paste('ukghg-total-', Sys.Date(), '.nc', sep='')
-      },
-      content = function(file) {
-        writeRaster(myFlux$s_ghgTotal, file)
-      }
-    )
-    # download netCDF files by sector
-    output$netcdf_bySector <- downloadHandler(
-      filename = function() {
-        paste('ukghg-bysectorbytime-', Sys.Date(), '.nc', sep='')
-      },
-      content = function(file) {
-        writeRaster(myFlux$ls_ghgBySectorByTime[[1]], file)
-      }
-    )
+    # # download netCDF file for total flux
+    # output$netcdf_total <- downloadHandler(
+    #   filename = function() {
+    #     paste('ukghg-total-', Sys.Date(), '.nc', sep='')
+    #   },
+    #   content = function(file) {
+    #     writeRaster(myFlux$s_ghgTotal, file)
+    #   }
+    # )
+    # # download netCDF files by sector
+    # output$netcdf_bySector <- downloadHandler(
+    #   filename = function() {
+    #     paste('ukghg-bysectorbytime-', Sys.Date(), '.nc', sep='')
+    #   },
+    #   content = function(file) {
+    #     writeRaster(myFlux$ls_ghgBySectorByTime[[1]], file)
+    #   }
+    # )
     
   }
   
