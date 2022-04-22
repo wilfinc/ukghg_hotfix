@@ -1,5 +1,5 @@
   ## UK-GHG Interface app
-  ## R script to make a shiny app which provides acces to the ukghg package
+  ## R script to make a shiny app which provides access to the ukghg package
   ##
   ## Peter Levy, CEH Edinburgh
   ## Bush Estate, Penicuik, EH26 0QB, U.K.
@@ -233,14 +233,6 @@
                  addLegend_decreasing(pal = pal, values = vals(), decreasing = T, title = toupper(input$select_gas))
     })
 
-    # observeEvent(input$sendjobbutton == 0, {
-    #   output$waiting_text <- renderText('<b>Outputs will appear here after the model has been run.<b>')
-    #   }, once = T)
-    # 
-    # observeEvent(input$sendjobbutton == 1, {
-    #   output$waiting_text <- NULL
-    # }, ignoreInit = T)
-    # 
     observe({
       if (input$TID == "View Output" | input$TID == "Download" )  {
         if (input$sendjobbutton == 0) {
