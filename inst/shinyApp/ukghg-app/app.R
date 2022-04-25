@@ -18,6 +18,7 @@
   library(DT)
   library(shinycssloaders)
   library(shinyBS)
+  library(shinyjs)
   
   devtools::source_url("https://github.com/NERC-CEH/UKCEH_shiny_theming/blob/main/theme_elements.R?raw=TRUE")
   
@@ -121,8 +122,9 @@
         tabPanel("View Output", 
                  leafletOutput('map', height = '795px'),
                  absolutePanel(
+                   shinyjs::useShinyjs(),
                    id = "map_controls", class = "panel panel-default", fixed = TRUE, draggable = TRUE, top = 200, left = 100, right = 'auto', bottom = "auto", width = 330, height = "auto",
-                   selectInput('sel_sector', label = 'Select sector:', choices = sectorNames),
+                   selectInput('sel_sector', label = 'Select sector:', choices = c('', sectorNames), selected = ''),
                    uiOutput('time_points'),
                    column(12, actionButton("plotmapbutton", "Plot Data", class = "btn btn-success btn-lg"), align = 'center'),
                    column(12, downloadButton("netcdf_dload", "Download Data", class = "btn btn-outline-dark btn-lg", icon = icon('download'), style = 'margin-top: 10px;'), align = 'center'),
@@ -200,8 +202,14 @@
                          writeNetCDF = input$select_writeNetCDF)
       shinybusy::remove_modal_spinner()
     })
+    
+    observeEvent(input$sendjobbutton, {
+      shinyjs::reset('map_controls')
+      #updateSelectInput(session, 'sel_sector', label = 'Select sector:', choices = c('', sectorNames))
+    })
 
     target_stack <- reactive({
+      req(input$sel_sector)
       if(input$sel_sector == 'Total'){
         myFlux$s_ghgTotal
       } else{
@@ -213,7 +221,10 @@
       target_stack()[[time_point_i()]]
       })
 
-    vals <- reactive({values(target_stack_i())})
+    vals <- reactive({
+      req(input$sel_sector)
+      values(target_stack_i())
+      })
 
     observeEvent(input$sendjobbutton, {
       output$map <- renderLeaflet({
@@ -221,6 +232,16 @@
         addTiles() %>%
         fitBounds(-7.57216793459, 49.959999905, 1.68153079591, 58.6350001085)
         })
+    })
+    
+    observeEvent(input$plotmapbutton, {
+      if(input$sel_sector == ''){
+        showModal(modalDialog(
+          title = "Sector missing",
+          "Select a sector to view model outputs",
+          easyClose = TRUE
+        ))
+      }
     })
     
     observeEvent(input$plotmapbutton, {
