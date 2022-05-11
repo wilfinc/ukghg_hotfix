@@ -31,14 +31,14 @@
 #' datect <- seq(startDate, endDate, length = nTimes)
 #' alpha_df <- calcAlpha("ch4", datect)
 
-calcAlpha <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"), 
-                datect, sectorList = 1:10, 
-                             # year  yday  wday  hour 
+calcAlpha <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
+                datect, sectorList = 1:10,
+                             # year  yday  wday  hour
                 timeScales = c(TRUE, TRUE, TRUE, TRUE),
                 beta_df = data.frame(sector = 1:10, # add default dataframe with beta = 1 for all
-                    beta_year = rep(1, 10), 
-                    beta_yday = rep(1, 10), 
-                    beta_wday = rep(1, 10), 
+                    beta_year = rep(1, 10),
+                    beta_yday = rep(1, 10),
+                    beta_wday = rep(1, 10),
                     beta_hour = rep(1, 10))){
   ghgName <- match.arg(ghgName)
   nTimes <- length(datect)
@@ -62,8 +62,8 @@ calcAlpha <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   df$beta_yday <- beta_df$beta_yday[match(df$sector, beta_df$sector)]
   df$beta_wday <- beta_df$beta_wday[match(df$sector, beta_df$sector)]
   df$beta_hour <- beta_df$beta_hour[match(df$sector, beta_df$sector)]
-  
-  
+
+
   # if any time scales not being used set both alpha and beta to 1
   # assumes column order year  yday  wday  hour in beta_df
   if (any(!timeScales)) beta_df[,c(FALSE, !timeScales)] <- 1
@@ -71,8 +71,8 @@ calcAlpha <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   if (!timeScales[2]) df$alpha_yday <- 1
   if (!timeScales[3]) df$alpha_wday <- 1
   if (!timeScales[4]) df$alpha_hour <- 1
-  
-  # multiply alphas for each time scale with beta 
+
+  # multiply alphas for each time scale with beta
   df <- within(df, alpha <- alpha_year * beta_year *
                             alpha_yday * beta_yday *
                             alpha_wday * beta_wday *
@@ -80,7 +80,7 @@ calcAlpha <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   df$sectorName <- df$sectorName.x
   df <- with(df, data.frame(iTime, datect, sector, sectorName, alpha))
   # sort df by sector then date
-  df <- df[with(df, order(sector, datect)), ]  
+  df <- df[with(df, order(sector, datect)), ]
   # subset to just the requested sectors
   df <- subset(df, sector %in% sectorList)
   return(df)
@@ -102,13 +102,13 @@ calcAlpha <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
 #' unit_conversion("n2o", "mol", "nano")
 #' unit_conversion("ch4", "g", "nano")
 
-unit_conversion <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"), 
+unit_conversion <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
                            unitType = c("mol", "g"),
                            unitSIprefix = c("peta", "tera", "giga", "mega", "kilo", "none", "milli", "micro", "nano", "pico")){
   ghgName <- match.arg(ghgName)
   unitType <- match.arg(unitType)
   unitSIprefix <- match.arg(unitSIprefix)
-  
+
   secsPerYear <- 365*24*60*60
   km2_to_m2 <- 1e6
   Tg_to_g <- 1e12
@@ -119,7 +119,7 @@ unit_conversion <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   } else if (ghgName == "co2") {
       molWt <- 44
   } else if (ghgName == "n2o") {
-      molWt <- 44  
+      molWt <- 44
   } else if (ghgName == "c2h6") {
       molWt <- 30       # 12*2 + 6
   } else if (ghgName == "voc") {
@@ -137,14 +137,14 @@ unit_conversion <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   # match prefix with multiplier
   i <- match(unitSIprefix, SIprefix)
   mult <- SI_multiplier[i]
-  
+
   # all gases in Tg y-1, converted to x m-2 s-1
   value <- Tg_to_g *mult /molWt /km2_to_m2 /secsPerYear
 
   # return name as well
   name <- paste(SIprefix[i], unitType, ghgName, "m^-2_s^-1", sep="_")
   return(list(value=value, # unit conversion multiplier
-               name=name))  # unit conversion name  
+               name=name))  # unit conversion name
 }
 
 ## ----calc_flux_predictions, eval=TRUE, results='asis', echo=TRUE, warning=TRUE, message=TRUE----
@@ -178,16 +178,16 @@ unit_conversion <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
 #' # calculate fluxes for these times
 #' myFlux <- calcFlux("ch4", datect, proj = "OSGB", res = "100" , "mol", "nano")
 
-calcFlux <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"), 
-                     datect = datect, 
-                     proj = c("OSGB", "LonLat"), 
-                     res = c("1", "20", "100"), 
+calcFlux <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
+                     datect = datect,
+                     proj = c("OSGB", "LonLat"),
+                     res = c("1", "20", "100"),
                      unitType = c("mol", "g"),
                      unitSIprefix = c("peta", "tera", "giga", "mega", "kilo", "none", "milli", "micro", "nano", "pico"),
                      writeNetCDF = FALSE,
                      sectorList = 1:10,
                      includeBio = TRUE,
-                                  # year  yday  wday  hour 
+                                  # year  yday  wday  hour
                      timeScales = c(TRUE, TRUE, TRUE, TRUE),
                      beta_df = data.frame(sector = 1:10, # add default dataframe with beta = 1 for all
                         beta_year = rep(1, 10),
@@ -198,8 +198,8 @@ calcFlux <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   proj <- match.arg(proj)
   #res  <- match.arg(res)
   unitType <- match.arg(unitType)
-  unitSIprefix <- match.arg(unitSIprefix) 
-  
+  unitSIprefix <- match.arg(unitSIprefix)
+
   flux <- calcFlux_anthro(ghgName, datect, proj, res, unitType, unitSIprefix, sectorList, timeScales, beta_df = beta_df)
   if (includeBio){
     flux_bio    <- calcFlux_bio   (ghgName, datect, proj, res, unitType, unitSIprefix, timeScales)
@@ -233,19 +233,19 @@ calcFlux <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
 #' datect <- seq(startDate, endDate, length = nTimes)
 #' myFlux <- calcFlux_anthro("ch4", datect, proj = "OSGB", res = "100", "mol", "nano")
 
-calcFlux_anthro <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"), 
-                     datect = datect, 
-                     proj = c("OSGB", "LonLat"), 
-                     res = c("1", "20", "100"),                  
+calcFlux_anthro <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
+                     datect = datect,
+                     proj = c("OSGB", "LonLat"),
+                     res = c("1", "20", "100"),
                      unitType = c("mol", "g"),
                      unitSIprefix = c("peta", "tera", "giga", "mega", "kilo", "none", "milli", "micro", "nano", "pico"),
                      sectorList = 1:10,
-                                  # year  yday  wday  hour 
+                                  # year  yday  wday  hour
                      timeScales = c(TRUE, TRUE, TRUE, TRUE),
                      beta_df = data.frame(sector = 1:10, # add default dataframe with beta = 1 for all
-                         beta_year = rep(1, 10), 
-                         beta_yday = rep(1, 10), 
-                         beta_wday = rep(1, 10), 
+                         beta_year = rep(1, 10),
+                         beta_yday = rep(1, 10),
+                         beta_wday = rep(1, 10),
                          beta_hour = rep(1, 10))){
   ghgName <- match.arg(ghgName)
   proj <- match.arg(proj)
@@ -253,13 +253,13 @@ calcFlux_anthro <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   res  <- as.numeric(res)
   unitType <- match.arg(unitType)
   unitSIprefix <- match.arg(unitSIprefix)
-  
+
   # get the data frame of alpha values
   alpha_df <- calcAlpha(ghgName, datect, sectorList, timeScales, beta_df = beta_df)
   # declare an array for the total emission across sectors for each time
   nTimes <- length(datect)
-  total <- array(dim = nTimes) 
-  
+  total <- array(dim = nTimes)
+
   # depending which gas we want, read the appropriate data into stack
   # test version using local inst\extdata *not* installed package inst\extdata files
   ## comment out for package release version
@@ -273,21 +273,20 @@ calcFlux_anthro <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
     lengthUnit <- "deg"
   }
   fname <- paste(ghgName, "BySector_", proj, "_", res, lengthUnit, ".grd", sep="")
-  ghgfile <- system.file("extdata", fname, package="ukghg")
-  ghgBySector <- stack(ghgfile)
-  
+  ghgBySector <- get(eval(fname))
+
   unitConv <- unit_conversion(ghgName, unitType, unitSIprefix)
-  
+
   r <- ghgBySector[[1]]
   # this works with stack, but is lost with brick
   r@data@unit <- unitConv$name
-  
+
   if (proj == "OSGB"){
     gridcell_area_km2 <- res(r)[1] * res(r)[2] / 1e6 # m2 -> km2
   } else if (proj == "LonLat"){
     gridcell_area_km2 <- cellStats(area(r), mean) # area outputs km2
   }
-  
+
   # create a stack with nSectors layers
   s_ghgBySector <- suppressWarnings(brick(r, values=FALSE, nl=nSectors))
   s_ghgBySector  <- setValues(s_ghgBySector, 0)
@@ -307,11 +306,11 @@ calcFlux_anthro <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
     #iRow <- 4
     iTime   <- alpha_df$iTime[iRow]
     iSector <- as.numeric(alpha_df$sector[iRow])
-    ls_ghgByTimeBySector[[iTime]][[iSector]] <- 
+    ls_ghgByTimeBySector[[iTime]][[iSector]] <-
       ghgBySector[[alpha_df$sector[iRow]]] * alpha_df$alpha[iRow]
 
     # put the same values in the other data structure
-    ls_ghgBySectorByTime[[iSector]][[iTime]] <- 
+    ls_ghgBySectorByTime[[iSector]][[iTime]] <-
     ls_ghgByTimeBySector[[iTime]][[iSector]]
   }
 
@@ -322,7 +321,7 @@ calcFlux_anthro <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
     total[iTime] <- cellStats(s_ghgTotal[[iTime]], "sum") * gridcell_area_km2  # so account for cell area in km2
     #print          (cellStats(s_ghgTotal[[iTime]], "sum"))
   }
-  
+
   # apply unit conversions
   s_ghgTotal <- s_ghgTotal * unitConv$value
   ls_ghgByTimeBySector <- lapply(ls_ghgByTimeBySector, function(x){x * unitConv$value})
@@ -333,7 +332,7 @@ calcFlux_anthro <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   attr(s_ghgTotal, "units") <- unitConv$name
   attr(ls_ghgByTimeBySector, "units") <- unitConv$name
   attr(ls_ghgBySectorByTime, "units") <- unitConv$name
-  
+
   return(list(total=total, # vector of total emissions
     s_ghgTotal=s_ghgTotal, # stack of total emissions
     ls_ghgByTimeBySector=ls_ghgByTimeBySector,  # list of sector stacks of emissions, one per time
@@ -363,13 +362,13 @@ calcFlux_anthro <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
 #' myFlux <- calcFlux_bio("co2", datect, proj = "OSGB", res = "100", "mol", "micro")
 #' plot(datect, myFlux$total)
 
-calcFlux_bio <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"), 
+calcFlux_bio <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
                     datect = datect,
                     proj = c("OSGB", "LonLat"),
-                    res = c("1", "20", "100"), 
+                    res = c("1", "20", "100"),
                     unitType = c("mol", "g"),
                      unitSIprefix = c("peta", "tera", "giga", "mega", "kilo", "none", "milli", "micro", "nano", "pico"),
-                                 # year  yday  wday  hour 
+                                 # year  yday  wday  hour
                     timeScales = c(TRUE, TRUE, TRUE, TRUE)){
   ghgName <- match.arg(ghgName)
   proj <- match.arg(proj)
@@ -386,31 +385,29 @@ calcFlux_bio <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   iTime <- seq(1, length = nTimes)
   df <- data.frame(iTime, datect)
   # declare an array (?vector) for the total biogenic flux for each time
-  total <- array(dim = nTimes) 
+  total <- array(dim = nTimes)
   # extract useful bits of timestamp
   df$datelt <- as.POSIXlt(df$datect, tz = "UTC")
   df$yday <- as.numeric(df$datelt$yday)
   df$hour <- as.numeric(df$datelt$hour)
-  
+
   # create stacks with nTimes layers
   # amplitude of diurnal cycle in NEE CO2
   fname <- paste("lai_", proj, "_", res, lengthUnit, ".grd", sep="")
-  lai_file <- system.file("extdata", fname, package="ukghg")
-  lai <- raster(lai_file)
+  lai <- get(eval((fname))
   diurnalAmpli_yday  <- brick(lai, values=FALSE, nl=nTimes)
   dailyMean_yday  <- diurnalAmpli_yday
   # CH4 is constant in time just now
-  fname <- paste("Fch4_mean_Tgkm2y_", proj, "_", res, lengthUnit, ".grd", sep="")  
-  ch4_bio_file <- system.file("extdata", fname, package="ukghg")
-  Fch4_mean_Tgkm2y <- raster(ch4_bio_file)
+  Fch4_mean_Tgkm2y <- paste("Fch4_mean_Tgkm2y_", proj, "_", res, lengthUnit, ".grd", sep="")
+  ch4_bio_file <- get(eval(fname))
   flux_ch4  <- suppressWarnings(brick(Fch4_mean_Tgkm2y, values=FALSE, nl=nTimes))
   flux_ch4  <- setValues(flux_ch4, getValues(Fch4_mean_Tgkm2y))
   # N2O is just zero from natural land
   flux_zero  <- setValues(flux_ch4, 0)
-   
+
   # lai and LUE and ampli_min could by land class specific
   # need a table for Corine classes
-  # LAI in chess ancil data seems static  
+  # LAI in chess ancil data seems static
   LUE <- 1 # 4 # NEE/LAI, umol CO2 m-2 s-1 / m2 m-2
   ampli_min <- 0 # 1.2 # umol CO2 m-2 s-1
   offset <- 6 # hours
@@ -427,39 +424,39 @@ calcFlux_bio <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
     # thf max amplitude of 3.2 over summer
   }
   # sinusoidal diurnal var in flux according to seasonally-variable amplitude, i.e.
-  # sinusoidal seasonal plus diurnal var in flux 
+  # sinusoidal seasonal plus diurnal var in flux
   # variation at either time scale can be removed if timeScales 2 or 4 == FALSE
   # although yday variation in amplitude remains, even if daily mean == 0 constant
-  flux_co2  <- dailyMean_yday * as.numeric(timeScales[2]) + 
+  flux_co2  <- dailyMean_yday * as.numeric(timeScales[2]) +
      as.numeric(timeScales[4]) * diurnalAmpli_yday * sin(2*pi*(df$hour + offset)/24)
-  
+
   ## need to sort out where to convert units
-  ## add totalisier loop to flux_bio, 
+  ## add totalisier loop to flux_bio,
   ## so outputs of both functions are the same and can be added?
   # co2 calculated in umol - need to convert to Tg km2 y for totalling
   unitConv <- unit_conversion("co2", "mol", "micro")
   flux_co2 <- flux_co2 / unitConv$value
-  
+
   if (ghgName == "ch4") {
       s_ghg <- flux_ch4
   } else if (ghgName == "co2") {
       s_ghg <- flux_co2
   } else if (ghgName == "n2o" | ghgName == "c2h6" | ghgName == "voc") {
       s_ghg <- flux_zero
-  }  
-  
+  }
+
   if (proj == "OSGB"){
     gridcell_area_km2 <- res(s_ghg[[1]])[1] * res(s_ghg[[1]])[2] / 1e6 # m2 -> km2
   } else if (proj == "LonLat"){
     gridcell_area_km2 <- cellStats(area(s_ghg[[1]]), mean) # area outputs km2
   }
-  
+
   for (iTime in 1:(nTimes)){
     # return the sum
     total[iTime] <- cellStats(s_ghg[[iTime]], "sum") * gridcell_area_km2  # so account for cell area in km2
     #print( cellStats(s_ghg[[iTime]], "sum") )
   }
-  
+
   # apply unit conversion
   unitConv <- unit_conversion(ghgName, unitType, unitSIprefix)
   s_ghg <- s_ghg * unitConv$value
@@ -475,7 +472,7 @@ calcFlux_bio <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
 }
 
 ## ----combine-------------------------------------------------------------
-#' A function to combine map sequences of biogenic and anthropogenic fluxes 
+#' A function to combine map sequences of biogenic and anthropogenic fluxes
 #'
 #' This function combines biogenic and anthropogenic greenhouse gas fluxes from the UK, based on a spatio-temporal model and the national GHG inventory data.
 #' @param flux_anthro anthropogenic greenhouse gas fluxes
@@ -499,21 +496,21 @@ combineFlux <- function(flux_anthro, flux_bio){
   s_ghgTotal           <- flux_anthro$s_ghgTotal
   ls_ghgByTimeBySector <- flux_anthro$ls_ghgByTimeBySector
   ls_ghgBySectorByTime <- flux_anthro$ls_ghgBySectorByTime
-  
+
   nSectors <- length(ls_ghgBySectorByTime)
   nTimes   <- length(ls_ghgByTimeBySector)
   # add the bio flux stack to the list of sectors
   ls_ghgBySectorByTime[[nSectors+1]] <- flux_bio$s_ghg
-  
+
   for (iTime in 1:(nTimes)){
     # add a bio flux raster to the stack of sectors
-    ls_ghgByTimeBySector[[iTime]] <- 
+    ls_ghgByTimeBySector[[iTime]] <-
     addLayer(ls_ghgByTimeBySector[[iTime]], flux_bio$s_ghg[[iTime]])
     # return a RasterLayer for the sum across sectors
     #s_ghgTotal[[iTime]] <- sum(ls_ghgByTimeBySector[[iTime]])
     s_ghgTotal[[iTime]] <- flux_anthro$s_ghgTotal[[iTime]] + flux_bio$s_ghg[[iTime]]
   }
-  
+
   return(list(total=total, # vector of total emissions
   s_ghgTotal=s_ghgTotal, # stack of total emissions
   ls_ghgByTimeBySector=ls_ghgByTimeBySector,  # list of sector stacks of emissions, one per time
@@ -544,23 +541,23 @@ combineFlux <- function(flux_anthro, flux_bio){
 #' }
 
 writeNetCDF <- function(ghgName, datect, proj, res, flux){
-  fname <- paste("uk_flux_total_", ghgName, "_", proj, "_", res, "km.nc", sep="")  
-  vname <- paste(ghgName, "_flux", sep="")  
-  lvname <- paste("Total", ghgName, "flux across sectors", sep=" ")  
+  fname <- paste("uk_flux_total_", ghgName, "_", proj, "_", res, "km.nc", sep="")
+  vname <- paste(ghgName, "_flux", sep="")
+  lvname <- paste("Total", ghgName, "flux across sectors", sep=" ")
   timename <- paste("Time starting", datect[1])
   timeunit <- difftime(datect[2], datect[1], units="days") # assumes regular intervals
   timeunit <- paste(timeunit, "days")
-  
+
   # write total to file
-  rf <-  writeRaster(flux$s_ghgTotal, 
-    filename = fname, format="CDF", 
-    varname = vname, 
-    varunit = attr(flux$s_ghgTotal, "units"), 
+  rf <-  writeRaster(flux$s_ghgTotal,
+    filename = fname, format="CDF",
+    varname = vname,
+    varunit = attr(flux$s_ghgTotal, "units"),
     longname = lvname,
-    zname = timename, 
+    zname = timename,
     zunit = timeunit,
-    overwrite=TRUE)   
-    
+    overwrite=TRUE)
+
   #nc <- nc_open(filename=fname)
 
   nSectors <- length(flux$ls_ghgBySectorByTime)
@@ -568,17 +565,17 @@ writeNetCDF <- function(ghgName, datect, proj, res, flux){
 
   # write output to file by sector
   for (iSector in 1:nSectors){
-    fname <- paste("uk_flux_", sectorName[iSector], "_", ghgName, "_", proj, "_", res, "km.nc", sep="")  
-    lvname <- paste(ghgName, "flux from", sectorName[iSector], sep=" ")  
+    fname <- paste("uk_flux_", sectorName[iSector], "_", ghgName, "_", proj, "_", res, "km.nc", sep="")
+    lvname <- paste(ghgName, "flux from", sectorName[iSector], sep=" ")
     # write total to file
-    rf <-  writeRaster(flux$ls_ghgBySectorByTime[[iSector]], 
-    filename = fname, format="CDF", 
-    varname = vname, 
-    varunit = attr(flux$ls_ghgBySectorByTime, "units"), 
+    rf <-  writeRaster(flux$ls_ghgBySectorByTime[[iSector]],
+    filename = fname, format="CDF",
+    varname = vname,
+    varunit = attr(flux$ls_ghgBySectorByTime, "units"),
     longname = lvname,
-    zname = timename, 
+    zname = timename,
     zunit = timeunit,
-    overwrite=TRUE)       
+    overwrite=TRUE)
   }
   return(print("NetCDF output files written"))
 }

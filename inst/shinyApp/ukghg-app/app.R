@@ -7,7 +7,7 @@
   ## Tel: 0131 445 8556
   ## September 2019
   
-  library(piggyback)
+  #library(piggyback)
   library(shiny)
   library(lubridate)
   library(ukghg)
@@ -19,6 +19,8 @@
   library(shinycssloaders)
   library(shinyBS)
   library(shinyjs)
+  library(ukghgdata)
+  
   
   devtools::source_url("https://github.com/NERC-CEH/UKCEH_shiny_theming/blob/main/theme_elements.R?raw=TRUE")
   

@@ -11,7 +11,8 @@ Depends:
     raster
 Imports: 
     mgcv,
-    shiny
+    shiny,
+    ukghgdata
 Suggests: 
     ncdf4,
     testthat,
