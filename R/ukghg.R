@@ -394,7 +394,7 @@ calcFlux_bio <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   # create stacks with nTimes layers
   # amplitude of diurnal cycle in NEE CO2
   fname <- paste("lai_", proj, "_", res, lengthUnit, ".grd", sep="")
-  lai <- get(eval((fname))
+  lai <- get(eval(fname))
   diurnalAmpli_yday  <- brick(lai, values=FALSE, nl=nTimes)
   dailyMean_yday  <- diurnalAmpli_yday
   # CH4 is constant in time just now
