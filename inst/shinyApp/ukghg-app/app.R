@@ -95,7 +95,8 @@
                      fluidRow(
                        column(4, selectInput("select_unitType", label = h5("Units"), choices = as.list(c("mol", "g")))),
                        column(4, selectInput("select_unitSIprefix", label = h5("Unit Prefix"), choices = as.list(c("kilo", "none", "milli", "micro", "nano", "pico")), selected = "micro" )),
-                       column(4, selectInput("select_writeNetCDF", label = h5("output NetCDF"), choices = as.list(c(TRUE, FALSE)), selected = FALSE ))# I want this as a button # 
+                       #column(4, selectInput("select_writeNetCDF", label = h5("output NetCDF"), choices = as.list(c(TRUE, FALSE)), selected = TRUE ))# I want this as a button # 
+                       column(4, selectInput("select_writeNetCDF", label = h5("output NetCDF"), choices = as.list(c(TRUE)), selected = TRUE ))# I want this as a button # 
                        ),
                      fluidRow(
                        column(2, h5('Start:')),
