@@ -6,7 +6,12 @@
   ## plevy@ceh.ac.uk
   ## Tel: 0131 445 8556
   ## September 2019
-  
+
+#devtools::install_github("wilfinc/ukghg_hotfix", repos = 'dev_shiny-app')
+#devtools::install_github("wilfinc/ukghg_data")
+
+#packrat::snapshot()
+
   #library(piggyback)
   library(shiny)
   library(lubridate)
@@ -20,7 +25,8 @@
   library(shinyBS)
   library(shinyjs)
   library(ukghgdata)
-  
+  library(rgdal)
+  library(ncdf4)
   
   devtools::source_url("https://github.com/NERC-CEH/UKCEH_shiny_theming/blob/main/theme_elements.R?raw=TRUE")
   
