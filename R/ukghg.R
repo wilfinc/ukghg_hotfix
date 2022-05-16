@@ -399,9 +399,9 @@ calcFlux_bio <- function(ghgName = c("ch4", "co2", "n2o", "c2h6", "voc"),
   dailyMean_yday  <- diurnalAmpli_yday
   # CH4 is constant in time just now
   Fch4_mean_Tgkm2y <- paste("Fch4_mean_Tgkm2y_", proj, "_", res, lengthUnit, ".grd", sep="")
-  ch4_bio_file <- get(eval(fname))
-  flux_ch4  <- suppressWarnings(brick(Fch4_mean_Tgkm2y, values=FALSE, nl=nTimes))
-  flux_ch4  <- setValues(flux_ch4, getValues(Fch4_mean_Tgkm2y))
+  ch4_bio_file <- get(eval(Fch4_mean_Tgkm2y))
+  flux_ch4  <- suppressWarnings(brick(ch4_bio_file, values=FALSE, nl=nTimes))
+  flux_ch4  <- setValues(flux_ch4, getValues(ch4_bio_file))
   # N2O is just zero from natural land
   flux_zero  <- setValues(flux_ch4, 0)
 
