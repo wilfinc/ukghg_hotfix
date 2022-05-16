@@ -88,7 +88,8 @@
                      fluidRow(column(6, h4('Select:')), column(6, actionButton("sendjobbutton", "Run Model", class="btn btn-success btn-lg"), align="right")),
                      fluidRow(
                        column(4, selectInput('select_gas', h5("Gas"), choices = as.list(c("CH4", "CO2", "N2O", "C2H6", "VOC")))),
-                       column(4, selectInput('select_proj', h5("Projection"), choices = as.list(c("OSGB", "LonLat")))),
+                       #column(4, selectInput('select_proj', h5("Projection"), choices = as.list(c("OSGB", "LonLat")))),
+                       column(4, selectInput('select_proj', h5("Projection"), choices = as.list(c("OSGB")))),
                        column(4, uiOutput('res_selector')),
                        ), 
                      fluidRow(
